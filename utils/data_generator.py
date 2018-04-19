@@ -18,8 +18,8 @@ class DataGenerator(object):
     def read_data(self):
         self.strokes = np.load(BytesIO(file_io.read_file_to_string(self.strokes_file_path, binary_mode=True)),
                                encoding='latin1')
-        with file_io.FileIO(self.labels_file_path, 'r') as f:
-            self.texts = f.readlines()
+        # with file_io.FileIO(self.labels_file_path, 'r') as f:
+        #     self.texts = f.readlines()
         # with open(self.labels_file_path) as f:
         #     self.texts = f.readlines()
         #divide dataset into validation and training
@@ -47,14 +47,18 @@ class DataGenerator(object):
     def data_preprocessing_strokes_to_strokes(self, strokes, sequence_length=1):
         inputs = []
         targets = []
+        strokes = strokes.tolist()
         for i in range(0, len(strokes)):
             strokes_sentence = strokes[i]
+            if len(strokes_sentence) < sequence_length + 1:
+                continue
             number_of_samples = int(np.round(len(strokes_sentence) / float(sequence_length)))
+            #print(number_of_samples)
             for j in range(0, number_of_samples):
                 # choose a random num between 0 and len(strokes_sentence) - sequence_length - 1
                 # later have a restriction on the intersection of the chosen sets to limit a
                 # sequence chosen more than once
-                start_idx = np.random.randint(0, len(strokes_sentence) - sequence_length)
+                start_idx = np.random.randint(0, len(strokes_sentence) - sequence_length) #to account for samples < sequence
                 inputs.append(strokes_sentence[start_idx:start_idx + sequence_length])
                 targets.append(strokes_sentence[start_idx + 1:start_idx + sequence_length + 1])
         #wrong because of bernouli (fixed)
@@ -69,10 +73,10 @@ class DataGenerator(object):
         targets[:, :, 1] = (targets[:, :, 1] - x_mean) / x_std
         targets[:, :, 2] = (targets[:, :, 2] - y_mean) / y_std
         #further scaling for numerical stability
-        inputs[:, :, 1] = inputs[:, :, 1] / (inputs[:, :, 1].max() - inputs[:, :, 1].min())
-        inputs[:, :, 2] = inputs[:, :, 2] / (inputs[:, :, 2].max() - inputs[:, :, 2].min())
-        targets[:, :, 1] = targets[:, :, 1] / (targets[:, :, 1].max() - targets[:, :, 1].min())
-        targets[:, :, 2] = targets[:, :, 2] / (targets[:, :, 2].max() - targets[:, :, 2].min())
+        # inputs[:, :, 1] = inputs[:, :, 1] / (inputs[:, :, 1].max() - inputs[:, :, 1].min())
+        # inputs[:, :, 2] = inputs[:, :, 2] / (inputs[:, :, 2].max() - inputs[:, :, 2].min())
+        # targets[:, :, 1] = targets[:, :, 1] / (targets[:, :, 1].max() - targets[:, :, 1].min())
+        # targets[:, :, 2] = targets[:, :, 2] / (targets[:, :, 2].max() - targets[:, :, 2].min())
         return inputs, targets
 
     @staticmethod

@@ -4,7 +4,7 @@ from models.unconditional_model import Model
 from models import gaussian_sample
 from configs.config import InferenceConfig
 validation_config = InferenceConfig()
-trained_model_path = './output/high_learning_rate_high_dropout_data_normalized/'
+trained_model_path = './trained_models/high_learning_rate_data_normalized/'
 
 
 def generate_unconditionaly(seq=50):
