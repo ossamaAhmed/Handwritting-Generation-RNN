@@ -19,6 +19,7 @@ class Model(object):
         self.grad_clip = config.grad_clip
         self.LEN_OF_ALPHABET = config.LEN_OF_ALPHABET
         self.W_NUM_OF_GAUSSIANS = config.W_NUM_OF_GAUSSIANS
+        self.max_num_of_chars = config.U
 
         #accessible variables for training:
         self.learning_rate = None
@@ -46,7 +47,7 @@ class Model(object):
         with tf.name_scope('lstm_layers_with_window'):
             stacked_lstms, initial_states, final_states, \
             init_window, final_window, init_window_location_params, final_window_location_params, rnn_output = \
-                self.build_lstm_layers(stroke_point_t, self.LEN_OF_ALPHABET, self.SEQUENCE_LENGTH,
+                self.build_lstm_layers(stroke_point_t, self.LEN_OF_ALPHABET, self.max_num_of_chars,
                                        self.NUM_OF_HIDDEN_LAYERS, self.NUM_OF_LSTM_CELLS, self.BATCH_SIZE,
                                        self.W_NUM_OF_GAUSSIANS, character_sequence)
             self.initial_states = initial_states
@@ -93,7 +94,7 @@ class Model(object):
                                                  name='stroke_target')
         return stroke_point_t, character_sequence, stroke_point_t_plus_one
 
-    def build_lstm_layers(self, input_stroke, num_of_chars, sequence_len, num_of_layers, lstm_size,
+    def build_lstm_layers(self, input_stroke, num_of_chars, max_num_of_chars, num_of_layers, lstm_size,
                           batch_size, num_of_gaussian_functions, char_sequence):
         #cant do it like the unconditional one because of the window
         stacked_lstms = [self.lstm_cell(lstm_size) for _ in range(num_of_layers)]
@@ -116,7 +117,7 @@ class Model(object):
                 output0, cell_0_state = tf.nn.static_rnn(stacked_lstms[0], [cell_0_input], initial_state=cell_0_state)
             #now the output goes to a window layer
             window, location_params = self.build_window_layer(prev_window_location_params, num_of_gaussian_functions,
-                                                              output0[0], sequence_len, char_sequence)
+                                                              output0[0], max_num_of_chars, char_sequence)
             #connect cell 2 and cell 3 below (to be done in a for loop with skip connections)
             cell_1_input = tf.concat([input_stroke[i], output0[0], window], axis=1)
             with tf.variable_scope("cell1", reuse=tf.AUTO_REUSE):
@@ -139,7 +140,7 @@ class Model(object):
         #try with dynamic rnn next time
         return tf.nn.rnn_cell.LSTMCell(lstm_size, state_is_tuple=True, initializer=tf.contrib.layers.xavier_initializer())
 
-    def build_window_layer(self, previous_location_parms, num_of_gaussian_functions, input, sequence_len, char_sequence):
+    def build_window_layer(self, previous_location_parms, num_of_gaussian_functions, input, max_num_of_chars, char_sequence):
         #calculate window weights first
         kernel_initializer = tf.truncated_normal_initializer(stddev=0.075) #according to grave
         location_params = tf.layers.dense(input, num_of_gaussian_functions,
@@ -155,7 +156,7 @@ class Model(object):
                                             use_bias=False)# [BATCH, #ofGaussians]
         location_params = location_params + previous_location_parms
         #now lets generate the character indicies U
-        character_indicies = tf.range(0., sequence_len)  # not sure if its starting at 0 or 1? double check
+        character_indicies = tf.range(0., max_num_of_chars)  # not sure if its starting at 0 or 1? double check
         # use broacasting with each gaussian so should be in position 2 and expand the window parameters
         location_params = tf.expand_dims(location_params, 2)
         width_params = tf.expand_dims(width_params, 2)
@@ -217,9 +218,9 @@ class Model(object):
         #now calculate loss
         print('mean_x', mean_x.shape)
         print('gaussian', gaussian_distribution.shape)
-        bernouli_loss = -tf.log(target_cuts * predicted_cuts + ((1. - target_cuts) * (1. - predicted_cuts))) #clip it here
+        bernouli_loss = -tf.log((target_cuts * predicted_cuts + ((1. - target_cuts) * (1. - predicted_cuts))) + 1e-8) #clip it here
         print('predicted_cuts', predicted_cuts.shape)
-        gaussian_loss = -tf.log(tf.reduce_sum(weights * gaussian_distribution, axis=2))
+        gaussian_loss = -tf.log(tf.reduce_sum(weights * gaussian_distribution, axis=2) + 1e-8)
         print(gaussian_loss.shape)
         print(bernouli_loss.shape)
         network_loss = tf.reduce_mean(tf.squeeze(bernouli_loss) + gaussian_loss)

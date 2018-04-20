@@ -80,10 +80,9 @@ class TrainModel(object):
                                                              validation_feed)
                     writer.add_summary(valid_loss_summary, global_step=global_step)
 
-                    print('Epoch ', epoch, ' and Batch ', batch_idx + 1, ' | training loss is ',
-                          average_loss / (batch_idx + 1), ' | validation loss is ', valid_loss)
-
-                    if batch_idx % 2 == 0:
+                    if batch_idx % 10 == 0:
+                        print('Epoch ', epoch, ' and Batch ', batch_idx + 1, ' | training loss is ',
+                              average_loss / (batch_idx + 1), ' | validation loss is ', valid_loss)
                         saver.save(sess, checkpoint_file, global_step=global_step)
                         summary_proto.ParseFromString(summary_train)
                     batch_idx += 1
