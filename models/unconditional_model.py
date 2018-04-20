@@ -58,7 +58,6 @@ class Model(object):
 
         with tf.name_scope('network_loss'):
             self.network_loss = self.get_network_loss(predicted_cuts_loss, loss_gaussian)
-            self.learning_rate = tf.Variable(0.0, trainable=False)
         with tf.name_scope("summaries"):
             self.create_summaries(loss_gaussian,
                                   predicted_cuts_loss,
@@ -79,6 +78,7 @@ class Model(object):
             return
 
         with tf.name_scope("train"):
+            self.learning_rate = tf.Variable(0.0, trainable=False)
             grads = tf.gradients(self.network_loss, tf.trainable_variables())
             grads, _ = tf.clip_by_global_norm(grads, self.grad_clip)
             # for i in range(0, len(grads)):
