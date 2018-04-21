@@ -14,7 +14,7 @@ class DataGenerator(object):
         self.validation_strokes = None
         self.validation_sentences = None
         self.alphabet = None
-        self.data_partition_factor = 0.65
+        self.data_partition_factor = 0.8
         self.read_data()
         self.define_alphabet()
 

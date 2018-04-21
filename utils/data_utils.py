@@ -12,8 +12,7 @@ def data_generator(inputs, batch_size=1):
 def convert_sentence_to_one_hot_encoding(alphabet, sentence, max_num_of_chars):
     result = []
     for char in sentence:
-        if char in alphabet:
-            result.append([0 if char != alphabet_char else 1 for alphabet_char in alphabet])
+        result.append([0 if char != alphabet_char else 1 for alphabet_char in alphabet])
     #for the rest of the max_num_of_chars fill it with zeros? -> double check in paper
     for i in range(max_num_of_chars - len(sentence)):
         result.append([0 for _ in alphabet])
