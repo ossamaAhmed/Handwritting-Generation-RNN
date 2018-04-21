@@ -38,12 +38,12 @@ class TrainModel(object):
         self.load_data()
         self.train_model = ConditionalModel(train_config)
         self.train_model.build_model()
-        saver = tf.train.Saver(max_to_keep=50)
+        saver = tf.train.Saver(max_to_keep=10)
         summary_proto = tf.Summary()
         with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
             tf.global_variables_initializer().run()
             writer_file_path = os.path.join(FLAGS.output_dir, experiment_name, 'improved_graph')
-            checkpoint_file = os.path.join(FLAGS.output_dir, experiment_name)
+            checkpoint_file = os.path.join(FLAGS.output_dir, experiment_name, 'checkpoints')
             writer = tf.summary.FileWriter(writer_file_path, sess.graph)
             valid_loss = 0
             for epoch in range(0, train_config.EPOCHS):
@@ -75,7 +75,7 @@ class TrainModel(object):
                                                                             feed_dict=feed_dict)
                     average_loss += network_loss
                     writer.add_summary(summary_train, global_step=global_step)
-                    valid_loss_summary, valid_loss= sess.run([self.train_model.validation_summary,
+                    valid_loss_summary, valid_loss= sess.run([self.train_model.validation_summary, #move this outside, not vorrect
                                                              self.train_model.network_loss],
                                                              validation_feed)
                     writer.add_summary(valid_loss_summary, global_step=global_step)

@@ -20,7 +20,6 @@ class Model(object):
         self.LEN_OF_ALPHABET = config.LEN_OF_ALPHABET
         self.W_NUM_OF_GAUSSIANS = config.W_NUM_OF_GAUSSIANS
         self.max_num_of_chars = config.U
-
         #accessible variables for training:
         self.learning_rate = None
         self.initial_states = None #double check this !!!!!
@@ -33,44 +32,56 @@ class Model(object):
         self.optimizer = None
         self.train_op = None
         self.network_loss = None
+        #variables needed for inference
+        self.init_window = None
+        self.init_window_location_params = None
+        self.predicted_cuts = None
+        self.weights = None
+        self.mean_x = None
+        self.mean_y = None
+        self.std_x = None
+        self.std_y = None
+        self.correlation = None
+        #LSTM outputs
+        self.final_window = None
+        self.final_states = None
+        self.final_window_location_params = None
 
 
     def build_model(self):
         self.global_step = tf.Variable(0, dtype=tf.int32, trainable=False, name='global_step')
         with tf.name_scope('data'):
-            stroke_point_t, character_sequence, stroke_point_t_plus_one = self.build_data_layer(
+            self.stroke_point_t, self.character_sequence, self.stroke_point_t_plus_one = self.build_data_layer(
                 self.TIME_STEP_INPUT_SIZE,
                 self.LEN_OF_ALPHABET)
-            self.stroke_point_t = stroke_point_t
-            self.character_sequence = character_sequence
-            self.stroke_point_t_plus_one = stroke_point_t_plus_one
         with tf.name_scope('lstm_layers_with_window'):
-            stacked_lstms, initial_states, final_states, \
-            init_window, final_window, init_window_location_params, final_window_location_params, rnn_output = \
-                self.build_lstm_layers(stroke_point_t, self.LEN_OF_ALPHABET, self.max_num_of_chars,
+            stacked_lstms, self.initial_states, self.final_states, \
+            self.init_window, self.final_window, self.init_window_location_params, self.final_window_location_params, rnn_output = \
+                self.build_lstm_layers(self.stroke_point_t, self.LEN_OF_ALPHABET, self.max_num_of_chars,
                                        self.NUM_OF_HIDDEN_LAYERS, self.NUM_OF_LSTM_CELLS, self.BATCH_SIZE,
-                                       self.W_NUM_OF_GAUSSIANS, character_sequence)
-            self.initial_states = initial_states
+                                       self.W_NUM_OF_GAUSSIANS, self.character_sequence)
         with tf.name_scope('mixture_density_network'):
-            predicted_cuts, weights, mean_x, mean_y, std_x, std_y, correlation =\
+            self.predicted_cuts, self.weights, self.mean_x, self.mean_y, self.std_x, self.std_y, self.correlation =\
                 self.build_mixture_density_network(rnn_output, self.NUM_OF_MIXTURES)
         with tf.name_scope('network_loss'):
-            network_loss = self.get_mixture_density_network_loss(predicted_cuts, weights, mean_x, mean_y,
-                                                                 std_x, std_y, correlation, stroke_point_t_plus_one)
-            self.network_loss = network_loss
+            self.network_loss = self.get_mixture_density_network_loss(self.predicted_cuts, self.weights, self.mean_x,
+                                                                      self.mean_y, self.std_x, self.std_y,
+                                                                      self.correlation, self.stroke_point_t_plus_one)
         with tf.name_scope("summaries"):
-            self.summary_ops = self.create_summaries(network_loss, rnn_output, predicted_cuts, weights, mean_x,
-                                                     mean_y, std_x, std_y, correlation)
-        self.validation_summary = tf.summary.scalar('validation_loss', network_loss)
+            self.summary_ops = self.create_summaries(self.network_loss, rnn_output, self.predicted_cuts, self.weights,
+                                                     self.mean_x, self.mean_y, self.std_x, self.std_y,
+                                                     self.correlation)
+        self.validation_summary = tf.summary.scalar('validation_loss', self.network_loss)
         # inference_dict = {'network_loss': network_loss, 'lstm_initial_state': initial_state,
         #                   'lstm_final_state': self.final_state, 'predicted_cuts': predicted_cuts,
         #                   'mixtures_weights': mixtures_weights, 'mixtures_mean': mixtures_mean,
         #                   'mixtures_std': mixtures_std, 'mixtures_correlation': mixtures_correlation}
         if self.inference: #training_mode
             return
+
         with tf.name_scope("train"):
             self.learning_rate = tf.Variable(0.0, trainable=False) #change to steps
-            grads = tf.gradients(network_loss, tf.trainable_variables())
+            grads = tf.gradients(self.network_loss, tf.trainable_variables())
             grads, _ = tf.clip_by_global_norm(grads, self.grad_clip)
             # for i in range(0, len(grads)):
             #     if 'mixture_density_network' in grads[i].name:
@@ -112,14 +123,15 @@ class Model(object):
         cell_2_state = initial_states[2]
         rnn_output = []
         for i in range(0, len(input_stroke)):
-            cell_0_input = tf.concat([input_stroke[i], prev_window_output], axis=1)
             with tf.variable_scope("cell0", reuse=tf.AUTO_REUSE):
+                cell_0_input = tf.concat([input_stroke[i], prev_window_output], axis=1)
                 output0, cell_0_state = tf.nn.static_rnn(stacked_lstms[0], [cell_0_input], initial_state=cell_0_state)
             #now the output goes to a window layer
-            window, location_params = self.build_window_layer(prev_window_location_params, num_of_gaussian_functions,
-                                                              output0[0], max_num_of_chars, char_sequence)
-            #connect cell 2 and cell 3 below (to be done in a for loop with skip connections)
-            cell_1_input = tf.concat([input_stroke[i], output0[0], window], axis=1)
+            with tf.variable_scope("window", reuse=tf.AUTO_REUSE):
+                window, location_params = self.build_window_layer(prev_window_location_params, num_of_gaussian_functions,
+                                                                  output0[0], max_num_of_chars, char_sequence)
+                #connect cell 2 and cell 3 below (to be done in a for loop with skip connections)
+                cell_1_input = tf.concat([input_stroke[i], output0[0], window], axis=1)
             with tf.variable_scope("cell1", reuse=tf.AUTO_REUSE):
                 output1, cell_1_state = tf.nn.static_rnn(stacked_lstms[1], [cell_1_input], initial_state=cell_1_state)
             cell_2_input = tf.concat([input_stroke[i], output0[0], output1[0], window], axis=1)
@@ -132,7 +144,6 @@ class Model(object):
         #shape at this point is [BATCH_SIZE, LSTM_SIZE] of len SEQ_LENGTH
         rnn_output = tf.transpose(tf.stack(rnn_output), perm=[1, 0, 2]) #maybe its the other way around? not sure
         rnn_output = tf.concat(rnn_output, 1) #[BATCH_SIZE, SEQ_LENGTH, LSTM_SIZE]
-        print(rnn_output.shape)
         return stacked_lstms, initial_states, [cell_0_state, cell_1_state, cell_2_state], \
                 init_window, prev_window_output, init_window_location_parms, prev_window_location_params, rnn_output
 
@@ -140,20 +151,25 @@ class Model(object):
         #try with dynamic rnn next time
         return tf.nn.rnn_cell.LSTMCell(lstm_size, state_is_tuple=True, initializer=tf.contrib.layers.xavier_initializer())
 
-    def build_window_layer(self, previous_location_parms, num_of_gaussian_functions, input, max_num_of_chars, char_sequence):
+    def build_window_layer(self, previous_location_parms, num_of_gaussian_functions, input, max_num_of_chars,
+                           char_sequence):
         #calculate window weights first
         kernel_initializer = tf.truncated_normal_initializer(stddev=0.075) #according to grave
         location_params = tf.layers.dense(input, num_of_gaussian_functions,
                                           activation=tf.exp,
-                                          kernel_initializer=kernel_initializer, use_bias=False) # need to be added to location of previous window
+                                          kernel_initializer=kernel_initializer,
+                                          use_bias=True,
+                                          name='location_params') # need to be added to location of previous window
         width_params = tf.layers.dense(input, num_of_gaussian_functions,
                                        kernel_initializer=kernel_initializer,
                                        activation=tf.exp,
-                                       use_bias=False)  # bias might change
+                                       use_bias=True,
+                                       name='width_params')  # bias might change
         importance_params = tf.layers.dense(input, num_of_gaussian_functions,
                                             kernel_initializer=kernel_initializer,
                                             activation=tf.exp,
-                                            use_bias=False)# [BATCH, #ofGaussians]
+                                            use_bias=True,
+                                            name='importance_params')# [BATCH, #ofGaussians]
         location_params = location_params + previous_location_parms
         #now lets generate the character indicies U
         character_indicies = tf.range(0., max_num_of_chars)  # not sure if its starting at 0 or 1? double check
@@ -169,37 +185,44 @@ class Model(object):
                                                                                 character_indicies))))), axis=1,
                                        keepdims=True) #[BATCH, 1, seq_length]
         #CHAR SEQUENCE is [BATCH, SEQ_LENGTH, ONE-HOT]
-        window = tf.squeeze(tf.matmul(window_weights, char_sequence))#[BATCH, num_of_chars]
-        return window, tf.squeeze(location_params)
+        window = tf.squeeze(tf.matmul(window_weights, char_sequence), axis=1)#[BATCH, num_of_chars]
+        return window, tf.squeeze(location_params, axis=-1)
 
     def build_mixture_density_network(self, inputs, num_of_mixtures):
+        #so apparently we need to name these inputs!!!! BUUUUUGS
         predicted_cuts = tf.layers.dense(inputs, 1,
                                          kernel_initializer=tf.truncated_normal_initializer(stddev=0.075),
                                          activation=tf.sigmoid,
-                                         use_bias=False)
+                                         use_bias=True,
+                                         name='predicted_cuts')
         weights = tf.layers.dense(inputs, num_of_mixtures,
                                   kernel_initializer=tf.truncated_normal_initializer(stddev=0.075),
-                                  use_bias=False)
+                                  use_bias=True,
+                                  name='weights')
         mean_x = tf.layers.dense(inputs, num_of_mixtures,
                                  kernel_initializer=tf.truncated_normal_initializer(stddev=0.075),
-                                 use_bias=False)
+                                 use_bias=True,
+                                 name='mean_x')
         mean_y = tf.layers.dense(inputs, num_of_mixtures,
                                  kernel_initializer=tf.truncated_normal_initializer(stddev=0.075),
-                                 use_bias=False)
+                                 use_bias=True,
+                                 name='mean_y')
         std_x = tf.layers.dense(inputs, num_of_mixtures,
                                 kernel_initializer=tf.truncated_normal_initializer(stddev=0.075),
-                                activation=tf.sigmoid,
-                                use_bias=False)
+                                activation=tf.exp,
+                                use_bias=True,
+                                name='std_x')
         std_y = tf.layers.dense(inputs, num_of_mixtures,
                                 kernel_initializer=tf.truncated_normal_initializer(stddev=0.075),
-                                activation=tf.sigmoid,
-                                use_bias=False)
+                                activation=tf.exp,
+                                use_bias=True,
+                                name='std_y')
         correlation = tf.layers.dense(inputs, num_of_mixtures,
                                       activation=tf.tanh,
                                       kernel_initializer=tf.truncated_normal_initializer(stddev=0.075),
-                                      use_bias=False)
+                                      use_bias=True,
+                                      name='correlation')
         weights = tf.nn.softmax(weights)
-        print(weights.shape)
         return predicted_cuts, weights, mean_x, mean_y, std_x, std_y, correlation
 
     def get_mixture_density_network_loss(self, predicted_cuts, weights, mean_x, mean_y,
@@ -208,7 +231,6 @@ class Model(object):
         # target_cuts, target_coord_x, target_coord_y = tf.expand_dims(target_cuts, -1), \
         #                                               tf.expand_dims(target_coord_x, -1), \
         #                                               tf.expand_dims(target_coord_y, -1)
-        print('target_cuts', target_coord_x.shape)
         x_norm = tf.div(tf.subtract(target_coord_x, mean_x), std_x)
         y_norm = tf.div(tf.subtract(target_coord_y, mean_y), std_y)
         z = tf.square(x_norm) + tf.square(y_norm) - (2. * correlation * x_norm * y_norm)
@@ -216,15 +238,9 @@ class Model(object):
         gaussian_distribution = tf.div(tf.exp(tf.div(-z, 2. * one_minus_correlation_sq)),
                                        2. * np.pi * std_x * std_y * one_minus_correlation_sq)
         #now calculate loss
-        print('mean_x', mean_x.shape)
-        print('gaussian', gaussian_distribution.shape)
-        bernouli_loss = -tf.log((target_cuts * predicted_cuts + ((1. - target_cuts) * (1. - predicted_cuts))) + 1e-8) #clip it here
-        print('predicted_cuts', predicted_cuts.shape)
-        gaussian_loss = -tf.log(tf.reduce_sum(weights * gaussian_distribution, axis=2) + 1e-8)
-        print(gaussian_loss.shape)
-        print(bernouli_loss.shape)
-        network_loss = tf.reduce_mean(tf.squeeze(bernouli_loss) + gaussian_loss)
-        print(network_loss)
+        bernouli_loss = -tf.log((target_cuts * predicted_cuts + ((1. - target_cuts) * (1. - predicted_cuts))) + 1e-20) #clip it here
+        gaussian_loss = -tf.log(tf.reduce_sum(weights * gaussian_distribution, axis=2) + 1e-20)
+        network_loss = tf.reduce_mean(tf.squeeze(bernouli_loss, axis=-1) + gaussian_loss)
         return network_loss
 
     def add_names_for_inference(self, vars_dict): #not efficient for sure will change it later

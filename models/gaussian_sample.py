@@ -14,12 +14,12 @@ def choose_the_mixture(prob, weights):
     return -1
 
 
-def sample(weights, std_deviations, correlations, means):
-    chosen = choose_the_mixture(np.random.random(), weights[0])
+def sample(weights, std_x, std_y, correlations, mean_x, meany):
+    chosen = choose_the_mixture(np.random.random(), weights)
     # print(np.shape(mixtures_weights_v))
-    mean = [means[0, chosen, 0], means[0, chosen, 1]]
-    covariance = [[np.square(std_deviations[0, chosen, 0]),
-                   correlations[0, chosen] * std_deviations[0, chosen, 0] * std_deviations[0, chosen, 1]],
-                  [correlations[0, chosen] * std_deviations[0, chosen, 0] * std_deviations[0, chosen, 1],
-                   np.square(std_deviations[0, chosen, 1])]]
+    mean = [mean_x[chosen], meany[chosen]]
+    covariance = [[np.square(std_x[chosen]),
+                   correlations[chosen] * std_x[chosen] * std_y[chosen]],
+                  [correlations[chosen] * std_x[chosen] * std_y[chosen],
+                   np.square(std_y[chosen])]]
     return np.random.multivariate_normal(mean, covariance)
