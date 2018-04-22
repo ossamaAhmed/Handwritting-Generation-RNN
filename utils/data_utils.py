@@ -28,3 +28,16 @@ def convert_one_hot_encoding_to_sentence(alphabet, one_hot_vectors):
             result.append(char[0])
     res = ''.join(result)
     return res
+
+
+def define_alphabet():
+    alphabet = []
+    for i in range(ord('a'), ord('z') + 1):
+        alphabet.append(chr(i))
+    for i in range(ord('A'), ord('Z') + 1):
+        alphabet.append(chr(i))
+    for i in range(ord('0'), ord('9') + 1):
+        alphabet.append(chr(i))
+    alphabet.extend([' ', '"', "\'", '(', ')', ',', '#', '-', '?', '!', ';', ':'])
+    alphabet = np.array(alphabet)
+    return alphabet

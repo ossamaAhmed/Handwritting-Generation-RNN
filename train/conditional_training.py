@@ -1,11 +1,3 @@
-# from configs.conditional_config import TrainingConfig
-# from models.conditional_model import Model
-#
-# config = TrainingConfig()
-# my_model = Model(config)
-# my_model.build_model()
-#
-
 import tensorflow as tf
 import sys
 import os.path
@@ -60,7 +52,6 @@ class TrainModel(object):
                     feed_dict = {self.train_model.stroke_point_t: stroke_t,
                                  self.train_model.stroke_point_t_plus_one: stroke_t_plus_one,
                                  self.train_model.character_sequence: sentence}
-                    #ADD STATE
                     global_step, summary_train, _, network_loss = sess.run([self.train_model.global_step,
                                                                             self.train_model.summary_ops,
                                                                             self.train_model.train_op,
@@ -82,8 +73,7 @@ class TrainModel(object):
                     validation_feed = {self.train_model.stroke_point_t: stroke_t,
                                        self.train_model.stroke_point_t_plus_one: stroke_t_plus_one,
                                        self.train_model.character_sequence: sentence}
-                    stroke_t, stroke_t_plus_one, sentence = batch
-                    valid_loss_summary, valid_loss = sess.run([self.train_model.validation_summary,  # move this outside, not vorrect
+                    valid_loss_summary, valid_loss = sess.run([self.train_model.validation_summary,
                                                                self.train_model.network_loss],
                                                               feed_dict=validation_feed)
                     validation_loss += valid_loss

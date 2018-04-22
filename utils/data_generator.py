@@ -1,7 +1,7 @@
 from io import BytesIO
 import numpy as np
 from tensorflow.python.lib.io import file_io
-from utils.data_utils import convert_sentence_to_one_hot_encoding, data_generator
+from utils.data_utils import convert_sentence_to_one_hot_encoding, data_generator, define_alphabet
 #np.random.rand(0)
 
 
@@ -13,10 +13,9 @@ class DataGenerator(object):
         self.train_sentences = None
         self.validation_strokes = None
         self.validation_sentences = None
-        self.alphabet = None
         self.data_partition_factor = 0.8
         self.read_data()
-        self.define_alphabet()
+        self.alphabet = define_alphabet()
 
     def read_data(self):
         strokes = np.load(BytesIO(file_io.read_file_to_string(self.strokes_file_path, binary_mode=True)),
@@ -24,6 +23,7 @@ class DataGenerator(object):
         with file_io.FileIO(self.labels_file_path, 'r') as f:
             texts = np.array(f.readlines())
         #remove data with zeros as data points in strokes (will confuse the network)
+        #TODO:replace some chars to a non-char refer to graves paper page 31
         #TODO: more processing to be done, the data seems to be noisy
         for i in range(0, len(strokes)):
             for j in range(0, len(strokes[i])):
@@ -37,17 +37,6 @@ class DataGenerator(object):
         self.train_sentences = texts[indices[0:train_size]]
         self.validation_strokes = strokes[indices[train_size:]]
         self.validation_sentences = texts[indices[train_size:]]
-
-    def define_alphabet(self):
-        self.alphabet = []
-        for i in range(ord('a'), ord('z') + 1):
-            self.alphabet.append(chr(i))
-        for i in range(ord('A'), ord('Z') + 1):
-            self.alphabet.append(chr(i))
-        for i in range(ord('0'), ord('9') + 1):
-            self.alphabet.append(chr(i))
-        self.alphabet.extend([' ', '"', "\'", '(', ')', ',', '#', '-', '?', '!', ';', ':'])
-        self.alphabet = np.array(self.alphabet)
 
     def generate_unconditional_dataset(self, batch_size=30, sequence_length=300):
         training_input, training_target = self.data_preprocessing_strokes_to_strokes(self.train_strokes,

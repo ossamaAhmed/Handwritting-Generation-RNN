@@ -1,8 +1,4 @@
-import tensorflow as tf
 import numpy as np
-from models.unconditional_model import Model
-from configs.config import InferenceConfig
-validation_config = InferenceConfig()
 
 
 def choose_the_mixture(prob, weights):
@@ -16,7 +12,6 @@ def choose_the_mixture(prob, weights):
 
 def sample(weights, std_x, std_y, correlations, mean_x, meany):
     chosen = choose_the_mixture(np.random.random(), weights)
-    # print(np.shape(mixtures_weights_v))
     mean = [mean_x[chosen], meany[chosen]]
     covariance = [[np.square(std_x[chosen]),
                    correlations[chosen] * std_x[chosen] * std_y[chosen]],

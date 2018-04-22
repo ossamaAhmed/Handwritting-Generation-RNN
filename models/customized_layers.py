@@ -13,10 +13,8 @@ def build_lstm_layers(input_stroke, num_of_layers, lstm_size, batch_size, sequen
     outputs, final_state = tf.nn.static_rnn(stacked_lstm, input_stroke, initial_state=initial_state)
     # shape at this point is [BATCH_SIZE, LSTM_SIZE] of len SEQ_LENGTH
     rnn_output = tf.transpose(tf.stack(outputs), perm=[1, 0, 2])  # maybe its the other way around? not sure
-    print('rnn_output_pre', rnn_output.shape)
     rnn_output = tf.concat(rnn_output, 1)  # [BATCH_SIZE, SEQ_LENGTH, LSTM_SIZE]
-    print('rnn_output_after_concat', rnn_output.shape)
-    return outputs, initial_state, final_state
+    return rnn_output, initial_state, final_state
 
 
 def build_lstm_layers_with_window(input_stroke, num_of_chars, max_num_of_chars, num_of_layers, lstm_size,
