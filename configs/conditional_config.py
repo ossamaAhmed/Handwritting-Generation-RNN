@@ -2,7 +2,7 @@
 class TrainingConfig(object):
     def __init__(self):
         self.BATCH_SIZE = 30
-        self.SEQUENCE_LENGTH = 350
+        self.SEQUENCE_LENGTH = 300
         self.NUM_OF_LSTM_CELLS = 400
         self.NUM_OF_HIDDEN_LAYERS = 3
         self.NUM_OF_MIXTURES = 20
@@ -16,7 +16,7 @@ class TrainingConfig(object):
         self.epsilon_regularizer = 1e-10
         self.grad_clip = 10.
         self.learning_rate = 5e-4 #early stopping to be done
-        self.EPOCHS = 50
+        self.EPOCHS = 100
         self.decay_rate = 0.95
 
 

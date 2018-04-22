@@ -1,7 +1,7 @@
 
 class TrainingConfig(object):
     def __init__(self):
-        self.BATCH_SIZE = 25
+        self.BATCH_SIZE = 30
         self.SEQUENCE_LENGTH = 300
         self.NUM_OF_LSTM_CELLS = 400
         self.NUM_OF_HIDDEN_LAYERS = 3

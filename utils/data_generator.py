@@ -1,14 +1,20 @@
 from io import BytesIO
 import numpy as np
 from tensorflow.python.lib.io import file_io
-from utils.data_utils import convert_sentence_to_one_hot_encoding, data_generator, define_alphabet
+from utils.data_utils import convert_sentence_to_one_hot_encoding, data_generator, define_alphabet, \
+    get_standard_normalization_params
 #np.random.rand(0)
+#Standard Normalization to be used in testing and inference as well
+
+x_mean, x_std, y_mean, y_std = get_standard_normalization_params()
 
 
 class DataGenerator(object):
     def __init__(self, strokes_file_path, labels_file_path):
         self.strokes_file_path = strokes_file_path
         self.labels_file_path = labels_file_path
+        self.raw_strokes = None
+        self.raw_sentences = None
         self.train_strokes = None
         self.train_sentences = None
         self.validation_strokes = None
@@ -18,13 +24,15 @@ class DataGenerator(object):
         self.alphabet = define_alphabet()
 
     def read_data(self):
-        strokes = np.load(BytesIO(file_io.read_file_to_string(self.strokes_file_path, binary_mode=True)),
-                          encoding='latin1')
+        self.raw_strokes = np.load(BytesIO(file_io.read_file_to_string(self.strokes_file_path, binary_mode=True)),
+                                   encoding='latin1')
         with file_io.FileIO(self.labels_file_path, 'r') as f:
-            texts = np.array(f.readlines())
+            self.raw_sentences = np.array(f.readlines())
         #remove data with zeros as data points in strokes (will confuse the network)
         #TODO:replace some chars to a non-char refer to graves paper page 31
         #TODO: more processing to be done, the data seems to be noisy
+        strokes = np.copy(self.raw_strokes)
+        texts = np.copy(self.raw_sentences)
         for i in range(0, len(strokes)):
             for j in range(0, len(strokes[i])):
                 if strokes[i][j][0] == 0. and strokes[i][j][1] == 0. and strokes[i][j][2] == 0.:
@@ -89,9 +97,10 @@ class DataGenerator(object):
         inputs = np.array(inputs)
         targets = np.array(targets)
         # TODO: standard normalization
-        scaling_factor = np.max(inputs[:, :, 1:]) - np.min(inputs[:, :, 1:])
-        inputs[:, :, 1:] = inputs[:, :, 1:] / scaling_factor
-        targets[:, :, 1:] = targets[:, :, 1:] / scaling_factor
+        inputs[:, :, 1] = (inputs[:, :, 1] - x_mean) / x_std
+        inputs[:, :, 2] = (inputs[:, :, 2] - y_mean) / y_std
+        targets[:, :, 1] = (targets[:, :, 1] - x_mean) / x_std
+        targets[:, :, 2] = (targets[:, :, 2] - y_mean) / y_std
         return inputs, targets
 
     @staticmethod
@@ -106,6 +115,8 @@ class DataGenerator(object):
             if len(strokes_sentence) < sequence_length + 1:# skip sequences less than sequence length + 1
                 continue
             # TODO: generate more data maybe according to the average number of strokes, the new data might be more noisy
+            #TODO: count the number of ones in the strokes_sentence and cut the sentence according to this
+            #TODO: Generate more data
             start_idx = 0
             inputs.append(strokes_sentence[start_idx:start_idx + sequence_length])
             targets.append(strokes_sentence[start_idx + 1:start_idx + sequence_length + 1])
@@ -114,7 +125,8 @@ class DataGenerator(object):
         inputs = np.array(inputs)
         targets = np.array(targets)
         # TODO: standard normalization
-        scaling_factor = np.max(inputs[:, :, 1:]) - np.min(inputs[:, :, 1:])
-        inputs[:, :, 1:] = inputs[:, :, 1:] / scaling_factor
-        targets[:, :, 1:] = targets[:, :, 1:] / scaling_factor
+        inputs[:, :, 1] = (inputs[:, :, 1] - x_mean) / x_std
+        inputs[:, :, 2] = (inputs[:, :, 2] - y_mean) / y_std
+        targets[:, :, 1] = (targets[:, :, 1] - x_mean) / x_std
+        targets[:, :, 2] = (targets[:, :, 2] - y_mean) / y_std
         return inputs, targets, sentences_input

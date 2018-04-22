@@ -9,6 +9,14 @@ def data_generator(inputs, batch_size=1):
         yield result
 
 
+def get_standard_normalization_params():
+    x_std = 2.0786476
+    x_mean = 0.41248125
+    y_std = 1.8560573
+    y_mean = -0.006003161
+    return x_mean, x_std, y_mean, y_std
+
+
 def convert_sentence_to_one_hot_encoding(alphabet, sentence, max_num_of_chars):
     result = []
     for char in sentence:

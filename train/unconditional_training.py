@@ -12,7 +12,7 @@ FLAGS = flags.FLAGS
 train_config = TrainingConfig()
 flags.DEFINE_string('data_dir', 'data', 'Input Directory.')
 flags.DEFINE_string('output_dir', 'output', 'Output Directory.')
-experiment_name = 'high_learning_rate_high_dropout_data_normalized'
+flags.DEFINE_string('experiment_name', 'unconditional_model_standard_data_w_10_clipping', 'Output Directory.')
 
 
 class TrainModel(object):
@@ -33,8 +33,8 @@ class TrainModel(object):
         summary_proto = tf.Summary()
         with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
             tf.global_variables_initializer().run()
-            writer_file_path = os.path.join(FLAGS.output_dir, experiment_name, 'improved_graph')
-            checkpoint_file = os.path.join(FLAGS.output_dir, experiment_name, 'unconditional_model')
+            writer_file_path = os.path.join(FLAGS.output_dir, FLAGS.experiment_name, 'improved_graph')
+            checkpoint_file = os.path.join(FLAGS.output_dir, FLAGS.experiment_name, 'unconditional_model')
             writer = tf.summary.FileWriter(writer_file_path, sess.graph)
             for epoch in range(0, train_config.EPOCHS):
                 sess.run(tf.assign(self.train_model.learning_rate,

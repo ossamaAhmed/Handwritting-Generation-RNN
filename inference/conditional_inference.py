@@ -6,7 +6,7 @@ from configs.conditional_config import InferenceConfig
 from utils.data_utils import convert_sentence_to_one_hot_encoding, define_alphabet
 alphabet = define_alphabet()
 validation_config = InferenceConfig()
-trained_model_path = './output/conditional_model/'
+trained_model_path = './experiments/conditional_experiments/conditional_model_clipping_paper_scaled_data/'
 
 
 def generate_conditionaly(sentence='hello'):
@@ -26,7 +26,7 @@ def predict(sentence, sess, inference_model, seq_length=300):
     current_stroke = np.zeros([1, 1, 3], dtype=np.float32)
     char_sequence = [convert_sentence_to_one_hot_encoding(alphabet, sentence,
                                                           validation_config.U)]
-    current_stroke[0, 0, :] = [1, 0, 1]
+    current_stroke[0, 0, :] = [0, 0, 0]
     sampled_strokes = []  # resulting strokes
     sampled_strokes.append(np.copy(current_stroke))
     # feed it in the model to get the second stroke in a while loop
@@ -59,10 +59,6 @@ def predict(sentence, sess, inference_model, seq_length=300):
             gaussian_sample.sample(weights[0, 0, :], std_x[0, 0, :], std_y[0, 0, :], correlation[0, 0, :],
                                    mean_x[0, 0, :], mean_y[0, 0, :])
         # cut or no?
-        prob = np.random.rand()
-        if prob < predicted_cuts[0, 0, :]:
-            current_stroke[0, 0, 0] = 1
-        else:
-            current_stroke[0, 0, 0] = 0
+        current_stroke[0, 0, 0] = np.random.binomial(1, predicted_cuts[0, 0, 0])
         sampled_strokes.append(np.copy(current_stroke))
     return sampled_strokes

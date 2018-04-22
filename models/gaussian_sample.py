@@ -10,9 +10,9 @@ def choose_the_mixture(prob, weights):
     return -1
 
 
-def sample(weights, std_x, std_y, correlations, mean_x, meany):
+def sample(weights, std_x, std_y, correlations, mean_x, mean_y):
     chosen = choose_the_mixture(np.random.random(), weights)
-    mean = [mean_x[chosen], meany[chosen]]
+    mean = [mean_x[chosen], mean_y[chosen]]
     covariance = [[np.square(std_x[chosen]),
                    correlations[chosen] * std_x[chosen] * std_y[chosen]],
                   [correlations[chosen] * std_x[chosen] * std_y[chosen],

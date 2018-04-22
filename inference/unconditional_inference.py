@@ -4,7 +4,7 @@ from models.unconditional_model import Model
 from models import gaussian_sample
 from configs.unconditional_config import InferenceConfig
 validation_config = InferenceConfig()
-trained_model_path = './output/high_learning_rate_high_dropout_data_normalized/'
+trained_model_path = './experiments/unconditional_experiments/unconditional_model_standard_data_w_10_clipping'
 
 
 def generate_unconditionaly(seq=100):
@@ -47,11 +47,6 @@ def sample(seq_length, sess, inference_model):
         current_stroke[0, 0, 1:] = \
             gaussian_sample.sample(weights[0, 0, :], std_x[0, 0, :], std_y[0, 0, :], correlation[0, 0, :],
                                    mean_x[0, 0, :], mean_y[0, 0, :])
-        # cut or no?
-        prob = np.random.rand()
-        if prob < predicted_cuts[0,0,:]:
-            current_stroke[0, 0, 0] = 1
-        else:
-            current_stroke[0, 0, 0] = 0
+        current_stroke[0, 0, 0] = np.random.binomial(1, predicted_cuts[0, 0, 0])
         sampled_strokes.append(np.copy(current_stroke))
     return sampled_strokes

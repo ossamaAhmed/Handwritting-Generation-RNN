@@ -100,7 +100,7 @@ class Model(object):
             #     if 'mixture_density_network' in grads[i].name:
             #         grads[i] = tf.clip_by_value(grads[i], -10.0, 10.0)
             #     else:
-            #         grads[i] = tf.clip_by_value(grads[i], -.0, 100.0)
+            #         grads[i] = tf.clip_by_value(grads[i], -100.0, 100.0)
             grads_and_vars = list(zip(grads, tf.trainable_variables()))
             self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
             self.train_op = self.optimizer.apply_gradients(grads_and_vars, global_step=self.global_step)
