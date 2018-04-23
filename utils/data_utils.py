@@ -44,25 +44,40 @@ def define_alphabet():
         alphabet.append(chr(i))
     for i in range(ord('A'), ord('Z') + 1):
         alphabet.append(chr(i))
-    for i in range(ord('0'), ord('9') + 1):
-        alphabet.append(chr(i))
-    alphabet.extend([' ', '"', "\'", '(', ')', ',', '#', '-', '?', '!', ';', ':'])
+    # for i in range(ord('0'), ord('9') + 1):
+    #     alphabet.append(chr(i))
+    # alphabet.extend([' ', '"', "\'", '(', ')', ',', '#', '-', '?', '!', ';', ':'])
     alphabet = np.array(alphabet)
     return alphabet
 
 
 def get_corresponding_chars_in_sentence(sentence, start_index, end_index, strokes_sentence):
-    # approximatly how many characters before start_index
-    skip_chars = 0
-    for i in range(0, start_index):
+    skip_cuts = 0
+    include_cuts = 0
+    total_cuts = 0
+    for i in range(0, len(strokes_sentence)):
         if strokes_sentence[i, 0] == 1:
-            skip_chars += 1
-    #we should have a prior about how many cut per char in alphabet and use this info
-    #approximatly how many character between start_index and end_index
-    include_chars = 0
-    for i in range(start_index, end_index):
-        if strokes_sentence[i, 0] == 1:
-            include_chars += 1
+            if i < start_index:
+                skip_cuts += 1
+            elif start_index <= i < end_index:
+                include_cuts += 1
+            total_cuts += 1
+    #calculate on average for this person hand writting how many cuts per char
+    cuts_per_char = total_cuts / float(len(sentence))
+    print(cuts_per_char)
+    skip_chars = int(skip_cuts / cuts_per_char)
+    include_chars = int(include_cuts / cuts_per_char)
+    # # approximatly how many characters before start_index
+    # skip_chars = 0
+    # for i in range(0, start_index):
+    #     if strokes_sentence[i, 0] == 1:
+    #         skip_chars += 1
+    # #we should have a prior about how many cut per char in alphabet and use this info
+    # #approximatly how many character between start_index and end_index
+    # include_chars = 0
+    # for i in range(start_index, end_index):
+    #     if strokes_sentence[i, 0] == 1:
+    #         include_chars += 1
     if skip_chars + include_chars <= len(strokes_sentence):
         return sentence[skip_chars: skip_chars + include_chars]
     else:
