@@ -11,7 +11,8 @@ FLAGS = flags.FLAGS
 train_config = TrainingConfig()
 flags.DEFINE_string('data_dir', 'data', 'Input Directory.')
 flags.DEFINE_string('output_dir', 'output', 'Output Directory.')
-flags.DEFINE_string('experiment_name', 'conditional_model_10_clipping_standard_norm', 'Output Directory.')
+flags.DEFINE_string('experiment_name', 'conditional_model_paper_clipping_standard_data_truncated_chars',
+                    'Experiment Name.')
 
 
 class TrainModel(object):
@@ -60,7 +61,7 @@ class TrainModel(object):
                     training_loss += network_loss
                     batch_idx += 1
                     writer.add_summary(summary_train, global_step=global_step)
-                    if batch_idx % 10 == 0:
+                    if batch_idx % 50 == 0:
                         print('Epoch ', epoch, ' and Batch ', batch_idx, ' | training loss is ',
                               training_loss / batch_idx)
                         saver.save(sess, checkpoint_file, global_step=global_step)

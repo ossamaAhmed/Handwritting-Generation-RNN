@@ -49,3 +49,21 @@ def define_alphabet():
     alphabet.extend([' ', '"', "\'", '(', ')', ',', '#', '-', '?', '!', ';', ':'])
     alphabet = np.array(alphabet)
     return alphabet
+
+
+def get_corresponding_chars_in_sentence(sentence, start_index, end_index, strokes_sentence):
+    # approximatly how many characters before start_index
+    skip_chars = 0
+    for i in range(0, start_index):
+        if strokes_sentence[i, 0] == 1:
+            skip_chars += 1
+    #we should have a prior about how many cut per char in alphabet and use this info
+    #approximatly how many character between start_index and end_index
+    include_chars = 0
+    for i in range(start_index, end_index):
+        if strokes_sentence[i, 0] == 1:
+            include_chars += 1
+    if skip_chars + include_chars <= len(strokes_sentence):
+        return sentence[skip_chars: skip_chars + include_chars]
+    else:
+        return sentence[skip_chars:]

@@ -2,7 +2,7 @@ from io import BytesIO
 import numpy as np
 from tensorflow.python.lib.io import file_io
 from utils.data_utils import convert_sentence_to_one_hot_encoding, data_generator, define_alphabet, \
-    get_standard_normalization_params
+    get_standard_normalization_params, get_corresponding_chars_in_sentence
 #np.random.rand(0)
 #Standard Normalization to be used in testing and inference as well
 
@@ -121,12 +121,24 @@ class DataGenerator(object):
                 continue
             # TODO: generate more data maybe according to the average number of strokes, the new data might be more noisy
             #TODO: count the number of ones in the strokes_sentence and cut the sentence according to this
-
-            start_idx = 0
-            inputs.append(strokes_sentence[start_idx:start_idx + sequence_length])
-            targets.append(strokes_sentence[start_idx + 1:start_idx + sequence_length + 1])
-            sentences_input.append(convert_sentence_to_one_hot_encoding(alphabet, char_sentence, max_num_of_chars)
-                                   [:max_num_of_chars])
+            number_of_samples = int(np.round(len(strokes_sentence) / float(sequence_length)))
+            for j in range(0, number_of_samples):
+                # choose a random num between 0 and len(strokes_sentence) - sequence_length - 1
+                # later have a restriction on the intersection of the chosen sets to limit a
+                # sequence chosen more than once
+                start_idx = np.random.randint(0, len(strokes_sentence) - sequence_length)
+                inputs.append(strokes_sentence[start_idx:start_idx + sequence_length])
+                targets.append(strokes_sentence[start_idx + 1:start_idx + sequence_length + 1])
+                corresponding_chars = get_corresponding_chars_in_sentence(char_sentence, start_idx,
+                                                                          start_idx + sequence_length,
+                                                                          strokes_sentence)
+                sentences_input.append(convert_sentence_to_one_hot_encoding(alphabet, corresponding_chars,
+                                                                            max_num_of_chars)[:max_num_of_chars])
+            # start_idx = 0
+            # inputs.append(strokes_sentence[start_idx:start_idx + sequence_length])
+            # targets.append(strokes_sentence[start_idx + 1:start_idx + sequence_length + 1])
+            # sentences_input.append(convert_sentence_to_one_hot_encoding(alphabet, char_sentence, max_num_of_chars)
+            #                        [:max_num_of_chars])
         inputs = np.array(inputs)
         targets = np.array(targets)
         # TODO: standard normalization
@@ -135,3 +147,20 @@ class DataGenerator(object):
         targets[:, :, 1] = (targets[:, :, 1] - x_mean) / x_std
         targets[:, :, 2] = (targets[:, :, 2] - y_mean) / y_std
         return inputs, targets, sentences_input
+
+    @staticmethod
+    def get_corresponding_chars_in_sentence(sentence, start_index, end_index, strokes_sentence):
+        # approximatly how many characters before start_index
+        skip_chars = 0
+        for i in range(0, start_index):
+            if strokes_sentence[i, 0] == 1:
+                skip_chars += 1
+        #approximatly how many character between start_index and end_index
+        include_chars = 0
+        for i in range(start_index, end_index):
+            if strokes_sentence[i, 0] == 1:
+                include_chars += 1
+        if skip_chars + include_chars <= len(strokes_sentence):
+            return sentence[skip_chars: skip_chars + include_chars]
+        else:
+            return sentence[skip_chars:]

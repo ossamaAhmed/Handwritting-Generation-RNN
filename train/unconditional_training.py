@@ -12,7 +12,8 @@ FLAGS = flags.FLAGS
 train_config = TrainingConfig()
 flags.DEFINE_string('data_dir', 'data', 'Input Directory.')
 flags.DEFINE_string('output_dir', 'output', 'Output Directory.')
-flags.DEFINE_string('experiment_name', 'unconditional_model_standard_data_no_clipping', 'Output Directory.')
+flags.DEFINE_string('experiment_name', 'unconditional_model_standard_data_no_clipping',
+                    'Experiment Name.')
 
 
 class TrainModel(object):
