@@ -6,7 +6,7 @@ from configs.conditional_config import InferenceConfig
 from utils.data_utils import convert_sentence_to_one_hot_encoding, define_alphabet
 alphabet = define_alphabet()
 validation_config = InferenceConfig()
-trained_model_path = './experiments/conditional_experiments/conditional_model_clipping_paper_scaled_data/'
+trained_model_path = './experiments/conditional_experiments/conditional_model_10_clipping_standard_norm/'
 
 
 def generate_conditionaly(sentence='hello'):

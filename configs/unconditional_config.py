@@ -2,7 +2,7 @@
 class TrainingConfig(object):
     def __init__(self):
         self.BATCH_SIZE = 30
-        self.SEQUENCE_LENGTH = 300
+        self.SEQUENCE_LENGTH = 200
         self.NUM_OF_LSTM_CELLS = 400
         self.NUM_OF_HIDDEN_LAYERS = 3
         self.NUM_OF_MIXTURES = 20
@@ -13,8 +13,8 @@ class TrainingConfig(object):
         self.grad_clip = 10.
         self.learning_rate = 5e-4 #early stopping to be done
         self.EPOCHS = 100
-        self.epsilon_regularizer = 1e-10
-        self.decay_rate = 0.95
+        self.epsilon_regularizer = 1e-8
+        self.decay_rate = 0.9
 
 
 
@@ -28,4 +28,4 @@ class InferenceConfig(object):
         self.TIME_STEP_INPUT_SIZE = 3  # first being the cut boolean
         self.TIME_STEP_TARGET_SIZE = 3  # same as input
         self.inference = True
-        self.epsilon_regularizer = 1e-10
+        self.epsilon_regularizer = 1e-8

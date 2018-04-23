@@ -10,10 +10,10 @@ def data_generator(inputs, batch_size=1):
 
 
 def get_standard_normalization_params():
-    x_std = 2.0786476
-    x_mean = 0.41248125
-    y_std = 1.8560573
-    y_mean = -0.006003161
+    x_std = 2.0943575
+    x_mean = 0.41900063
+    y_std = 1.8706665
+    y_mean = -0.006098041
     return x_mean, x_std, y_mean, y_std
 
 

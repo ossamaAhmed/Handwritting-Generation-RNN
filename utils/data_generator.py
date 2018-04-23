@@ -15,6 +15,8 @@ class DataGenerator(object):
         self.labels_file_path = labels_file_path
         self.raw_strokes = None
         self.raw_sentences = None
+        self.strokes = None
+        self.sentences = None
         self.train_strokes = None
         self.train_sentences = None
         self.validation_strokes = None
@@ -34,9 +36,12 @@ class DataGenerator(object):
         strokes = np.copy(self.raw_strokes)
         texts = np.copy(self.raw_sentences)
         for i in range(0, len(strokes)):
+            indicies_to_delete = []
             for j in range(0, len(strokes[i])):
                 if strokes[i][j][0] == 0. and strokes[i][j][1] == 0. and strokes[i][j][2] == 0.:
-                    np.delete(strokes[i], j)
+                    indicies_to_delete.append(j)
+            strokes[i] = np.delete(strokes[i], indicies_to_delete, axis=0)
+        self.strokes = np.copy(strokes)
         indices = np.arange(len(strokes))
         np.random.shuffle(indices)
         data_size = len(indices)
@@ -116,7 +121,7 @@ class DataGenerator(object):
                 continue
             # TODO: generate more data maybe according to the average number of strokes, the new data might be more noisy
             #TODO: count the number of ones in the strokes_sentence and cut the sentence according to this
-            #TODO: Generate more data
+
             start_idx = 0
             inputs.append(strokes_sentence[start_idx:start_idx + sequence_length])
             targets.append(strokes_sentence[start_idx + 1:start_idx + sequence_length + 1])

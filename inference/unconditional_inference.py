@@ -4,7 +4,7 @@ from models.unconditional_model import Model
 from models import gaussian_sample
 from configs.unconditional_config import InferenceConfig
 validation_config = InferenceConfig()
-trained_model_path = './experiments/unconditional_experiments/unconditional_model_standard_data_w_10_clipping'
+trained_model_path = './experiments/unconditional_experiments/unconditional_model_standard_data_no_clipping'
 
 
 def generate_unconditionaly(seq=100):

@@ -82,16 +82,17 @@ class Model(object):
         #training mode
         with tf.name_scope("train"):
             self.learning_rate = tf.Variable(0.0, trainable=False)
-            grads = tf.gradients(self.network_loss, tf.trainable_variables())
-            grads, _ = tf.clip_by_global_norm(grads, self.config.grad_clip)
+            # grads = tf.gradients(self.network_loss, tf.trainable_variables())
+            # grads, _ = tf.clip_by_global_norm(grads, self.config.grad_clip)
             # for i in range(0, len(grads)):
             #     if 'mixture_density_network' in grads[i].name:
             #         grads[i] = tf.clip_by_value(grads[i], -10.0, 10.0)
             #     else:
             #         grads[i] = tf.clip_by_value(grads[i], -.0, 100.0)
-            grads_and_vars = list(zip(grads, tf.trainable_variables()))
+            # grads_and_vars = list(zip(grads, tf.trainable_variables()))
             self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
-            self.train_op = self.optimizer.apply_gradients(grads_and_vars, global_step=self.global_step)
+            self.train_op = self.optimizer.minimize(self.network_loss, global_step=self.global_step)
+            # self.train_op = self.optimizer.apply_gradients(grads_and_vars, global_step=self.global_step)
         return
 
     def build_data_scope(self, stroke_point_len):
