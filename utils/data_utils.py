@@ -64,7 +64,6 @@ def get_corresponding_chars_in_sentence(sentence, start_index, end_index, stroke
             total_cuts += 1
     #calculate on average for this person hand writting how many cuts per char
     cuts_per_char = total_cuts / float(len(sentence))
-    print(cuts_per_char)
     skip_chars = int(skip_cuts / cuts_per_char)
     include_chars = int(include_cuts / cuts_per_char)
     # # approximatly how many characters before start_index
